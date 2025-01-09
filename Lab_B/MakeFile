@@ -1,0 +1,11 @@
+
+all:  AntiVirus
+
+AntiVirus:
+	gcc -Wall -g AntiVirus.c -o AntiVirus
+
+mem_check_AntiVirus:	
+	valgrind --leak-check=full --track-origins=yes ./AntiVirus
+
+clean:
+	rm -f  AntiVirus
