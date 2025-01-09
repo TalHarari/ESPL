@@ -1,0 +1,42 @@
+Part 1: Command-Line Arguments, Debugging, and input "echoing"
+First, make sure you have done part 0 before you start implementing this assignment, especially the semantics of arguments of main( ).
+Second, introduce a debug mode into your program. For this we will develop an easy debugging scheme which can be used with any program and allows for special debugging features for testing. The minimum implementation prints out important information to stderr when in debug mode. Printing out the command-line arguments allows for easy detection of errors in retrieving them. Henceforth, code you write in most labs and assignments will also require adding a debug mode, and it is a good idea to have this option in all programs you write, even if not required to do so!
+
+For this scheme, you must simply loop over the command-line arguments, and if in debug mode, print each argument on a separate "line" to stderr. Debug mode is a variable that you can choose to initialize to "on" or "off" (default: on), but if there is a command line argument "-D" it turns debug mode off, and if there is a command-line argument "+D" it turns the debug mode on. For simplicity, we require the effect of a debug flag change to occur immediately after the current command line argument is handled, that is, starting with the next command line argument.
+
+Use fprintf( ) -- see manual -- for simple printing of "strings" on separate lines. Note, that the output should be to stderr, rather than stdout, to differentiate between regular program output (currently null) and debug/error messages from the program.
+
+After handling the command line arguments, the program should behave as follows, every input character c (from stdin) is simply sent immediately to the output (stdout). That is, you read a character using fgetc( ), pass it to a function called encode(c) that at present returns it unchanged (i.e simply do: c=encode(c), where encode just returns its argument for now) and then print c using fputc( ), until detecting an EOF condition in the input (preferably using feof( )), at which point you should close the output stream and exit "normally".
+We recommend here that you use global varibles such as infile and outfile as arguments to fgetc() and fputc() respectively, initilized by default to stdin and stdout, respectively. This will allow you to do part 3 later on with very little effort.
+
+Part 2: The Encoder
+In this part you will first use the command-line parsing to detect a possible encoding string, and use that to modify the behaviour behavior of encode( ). With no encoding string (default), every input character (from stdin) is simply sent to the output (stdout).
+The encding works as follows. The encryption key is of the following structure: +E{key}. The argument {key} stands for a sequence of digits whose value will be added to each input characters in sequence, in a cyclic manner.
+This means that each digit in sequence recieved by the encoder is added to the coresponding character in sequence in the key. When and if the end of the key is reached, re-start reading encoding digits from the begining of the key. You should support both addition and subtraction, +E{key} is for addition and -E{key} is for subtraction.
+
+Implementation is as follows. The key value, if any, is provided as a command-line argument. As stated above, this is indicated by a command line argument such as "+E1234" or "-E13061". The first is a sequence of numbers to be added to the input characters before in encode( ), while the second is a sequence of numbers to be subtracted from the input characters. Assumptions are: only at most one of "+E" or "-E" are present, and the rest of the commend line argument is always (only) a non-empty sequence of decimal digits, terminated as usual by a null character.
+
+Encoding is as follows: to the first character of the input, add the numerical value of the first encoding digit, to the second input character add the (numerical value of the) second digit, etc. If you reach the end of the encoding string (null character!) before you reach EOF in the input, reset to the beginning of the encoding string. Observe that this is ASCII encoding, so it should be very simple to compute the numeric value of each digit, which you should do directly using no special functions.
+
+Note that we advance in the encoding key once for each input character, but encoding, if indicated, should only be applied to upper case, lower case, and digit characters, that is 0-9, A-Z, and a-z, and should use "wrap around", that is assume Z+1 is A, and A-1 is Z. etc. Examples are provided below to fully clarify this.
+
+Examples
+In the first example below see how the A,B,C,D,E are encoded adding 1,2,3,4,5 respectively and then for the next character the encoding key is reset to 1 for the next character, Z. But Z+1 is wrapped around and becomes A. Then there is a newline character, which is output with no change (still advancing the encoding key) so to the next characeter 3 is added, and to the one after that 4 is added. The last 2 characters again are output with no change. The 2nd example below is similar but now with a key to subtract, rather than add.
+#> encoder +E12345
+ABCDEZ
+BDFHJA
+12#<
+46#<
+^D
+#> encoder -E4321
+GDUQP523
+CASPL202
+^D
+Implementation note: it is a good idea to make the encoding string a global variable, and also to provide a default initial value of "0", which results in idempotent (i.e. no change of value) encoding. 
+                                                                                                                                                                                                                                                                                                    This way you do not need a special case for when no encoding is required according to the command line arguments!
+
+Part 3: Input and/or Output to Specific Files
+The default operation of your program is to read characters from stdin (the "console" keyboard), encode them as needed, and output the results to stdout (the "console" display).
+                                                                                                                                                                                                                                                                                                    After checking correctness of all the previous parts, now add the option for reading the input from a specified input file: if command-line argument "-ifname" is present, the input should be read from a file called "fname" instead of stdin (or in general the file name starts immediately after the "-i" and ends at the null character). Likewise, if command-line argument "-ofname" is present, the output should go to a file name "fname" (or in general, file name immediately after the "o").
+
+Observe that if you did things right and heeded our advice above, this part is only a few lines of code: while scanning the command-line arguments simply check for "-i" and "-o", open input and/or output files as needed using fopen( ), and use the file descriptor it returns for the value of "infile" and/or "outfile". The rest of the program does not need to change at all. Just make sure that if fopen( ) fails, print an error message to stderr and exit. Note that your program should support encoding keys, input file setting, output file setting, and debug flag setting, in any combination or order. You may assume that at most one of each will be given (e.g. no more than one encoding key, no more than one input file, and no more than one output file setting).
